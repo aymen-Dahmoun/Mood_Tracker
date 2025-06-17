@@ -1,30 +1,22 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { TouchableOpacity, Text,Image, StyleSheet, View, ActivityIndicator, Animated, PanResponder, ImageBackground, Dimensions } from "react-native";
+import { TouchableOpacity, Text,Image, StyleSheet, View, ActivityIndicator, Animated, PanResponder, ImageBackground, Dimensions, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import NavBar from "../Comps/NavBar";
+import MainLayout from "../Comps/MainLayout";
+import PromptInput from "../Comps/PromptInput";
+import Messages from '../Comps/Messages'
 
 
 export default function HomeScreen({ navigation }) {
-  const uri = "https://dummyjson.com/quotes";
-  const [quotes, setQuotes] = useState([]);
+
   const backgroundState = useState(new Animated.Value(0))[0];
   const {width, height} = Dimensions.get('window')
 
-  // State for tracking the pan (dragging position)
   const pan = useState(new Animated.ValueXY())[0];
 
   useEffect(() => {
-    async function fetchQuotes() {
-      try {
-        const response = await axios.get(uri);
-        setQuotes(response.data.quotes);
-      } catch (e) {
-        console.log(e);
-      }
-    }
-    fetchQuotes();
 
-    // Start the background animation loop
     Animated.loop(
       Animated.sequence([
         Animated.timing(backgroundState, {
@@ -46,61 +38,25 @@ export default function HomeScreen({ navigation }) {
     outputRange: ["#F2D0D7", "#BF93B0", '#7A91BF', '#B8CCD9', '#BAD9CB'],
   });
 
-  // PanResponder for drag behavior
-  const panResponder = PanResponder.create({
-    onMoveShouldSetPanResponder: () => true,
-    onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], { useNativeDriver: false }),
-    onPanResponderRelease: () => {
-      Animated.spring(pan, {
-        toValue: { x: 0, y: 0 },
-        useNativeDriver: true,
-      }).start();
-    },
-  });
-
   return (
-    
-      <Animated.View style={[Styles.container, { backgroundColor: backgroundColorInterpolation, }]}>
-      <ImageBackground
-      source={require('C:/Users/pc/emotion_tracker/src/background.png')}
-      style = {{width: width, height: height}}
-      opacity = {0.6}
-      >
-        <View> 
-          <Text style = {{fontSize: 24}}>Welcome</Text>
-        </View>
-        <View style={Styles.quoteContainer}>
-          {quotes.length > 0 ? (
-            <Animated.View
-              {...panResponder.panHandlers}
-              style={[
-                Styles.draggableQuote,
-                {
-                  transform: [
-                    { translateX: pan.x },
-                    { translateY: pan.y }
-                  ], // Using translateX and translateY for movement
-                }
-              ]}
-            >
-              <Text style={Styles.quoteText}>
-                {quotes[Math.floor(Math.random() * 30)].quote}
-              </Text>
-            </Animated.View>
-          ) : (
-            <ActivityIndicator style={{ color: "red" }} />
-          )}
-        </View>
-        <SafeAreaView style={Styles.btnContainer}>
-          <TouchableOpacity style={Styles.addBtn} onPress={() => navigation.navigate("History")}>
-            <Image source={require('C:/Users/pc/emotion_tracker/src/history.png')} style={[Styles.addBtnImage, {}]} />
-          </TouchableOpacity>
-          <TouchableOpacity style={Styles.addBtn} onPress={() => navigation.navigate("Mood")}>
-            <Image source={require('C:/Users/pc/emotion_tracker/src/add.png')} style={Styles.addBtnImage} />
-          </TouchableOpacity>
-        </SafeAreaView>
-    </ImageBackground>
-    </Animated.View>
+    <MainLayout>
+        <Animated.View
+          style={[
+            Styles.container,
+            { backgroundColor: backgroundColorInterpolation, padding: 0 }
+          ]}
+        >
+          <ImageBackground
+            source={require('../src/background.png')}
+            style={{ width: '100%', height: '100%' }}
+            imageStyle={{ resizeMode: 'cover' }}
+            opacity={0.6}
+          >
+            <Messages />
+          </ImageBackground>
+
+        </Animated.View>
+    </MainLayout>
   );
 }
 
