@@ -1,56 +1,98 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  TouchableWithoutFeedback,
+} from "react-native";
 import useBotResponse from "../Hooks/useGetOutputBot";
-import { FontAwesome5 } from '@expo/vector-icons'; 
+import { FontAwesome5 } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Divider from "./Divider";
 
 export default function ChatScreen() {
-    const [input, setInput] = useState("");
-    const [history, setHistory] = useState([
+  const [input, setInput] = useState("");
+  const [history, setHistory] = useState([
+    {
+      role: "system",
+      parts: [
         {
-            role: "system",
-            parts: [{ text: "You are a compassionate emotional support assistant. Be kind, non-judgmental, and supportive." }]
-        }
-    ]);
-    const { getBotResponse, error, loading } = useBotResponse();
+          text: "You are a compassionate emotional support assistant. Be kind, non-judgmental, and supportive.",
+        },
+      ],
+    },
+  ]);
+  const { getBotResponse, error, loading } = useBotResponse();
 
-    const handleSendMessage = async () => {
-        if (input.trim() === "") return;
+  const handleSendMessage = async () => {
+    if (input.trim() === "") return;
 
-        const userMessage = input;
-        setInput("");
+    const userMessage = input;
+    setInput("");
 
-        const { response, updatedHistory } = await getBotResponse(history, userMessage);
-        setHistory(updatedHistory);
-    };
-
-    return (
-        <View style={styles.container}>
-            <ScrollView style={styles.chatArea}>
-                {history
-                    .filter(msg => msg.role === "user" || msg.role === "model")
-                    .map((msg, index) => (
-                        <View key={index} style={msg.role === "user" ? styles.userMsg : styles.botMsg}>
-                            <Text style={styles.messageText}>{msg.parts[0].text}</Text>
-                        </View>
-                    ))}
-                {loading && <Text style={styles.loading}>Typing...</Text>}
-                {error && <Text style={styles.error}>{error}</Text>}
-            </ScrollView>
-
-            <View style={styles.inputArea}>
-                <TextInput
-                    style={styles.input}
-                    value={input}
-                    onChangeText={setInput}
-                    placeholder="Type your message..."
-                />
-                <TouchableOpacity onPress={handleSendMessage} style={styles.sendButton}>
-                    <FontAwesome5 name="arrow-up" size={20} color="white" />
-                </TouchableOpacity>
-            </View>
-        </View>
+    const { response, updatedHistory } = await getBotResponse(
+      history,
+      userMessage
     );
+    setHistory(updatedHistory);
+  };
+
+  return (
+    <View style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={20}
+      >
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.container}>
+            <ScrollView
+              style={styles.chatArea}
+              contentContainerStyle={{ paddingBottom: 10 }}
+            >
+              {history
+                .filter((msg) => msg.role === "user" || msg.role === "model")
+                .map((msg, index) => (
+                  <View
+                    key={index}
+                    style={msg.role === "user" ? styles.userMsg : styles.botMsg}
+                  >
+                    <Text style={styles.messageText}>
+                      {msg.parts[0].text}
+                    </Text>
+                  </View>
+                ))}
+              {loading && <Text style={styles.loading}>Typing...</Text>}
+              {error && <Text style={styles.error}>{error}</Text>}
+            </ScrollView>
+            <Divider style={{width:'90%', backgroundColor:'grey', alignSelf: 'center', marginTop:10, marginBottom: 10}} />
+            <View style={styles.inputArea}>
+              <TextInput
+                style={styles.input}
+                value={input}
+                onChangeText={setInput}
+                placeholder="Type your message..."
+              />
+              <TouchableOpacity
+                onPress={handleSendMessage}
+                style={styles.sendButton}
+              >
+                <FontAwesome5 name="arrow-up" size={20} color="white" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </View>
+  );
 }
+
 
 const styles = StyleSheet.create({
     container: {

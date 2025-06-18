@@ -1,155 +1,345 @@
-import React, { useEffect, useState } from "react";
-import { FlatList, Text, StyleSheet, TouchableOpacity, TextInput, View, Button, ImageBackgroundComponent, ImageBackground, Dimensions, Keyboard } from "react-native";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import setData from "../asyncStorageMethods/setData";
+import React, { useState, useCallback } from "react";
+import {
+  ScrollView,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  View,
+  ImageBackground,
+  Dimensions,
+  Keyboard,
+  TouchableWithoutFeedback,
+  Alert,
+  KeyboardAvoidingView,
+  Platform
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import setData from './../asyncStorageMethods/setData';
+import MainLayout from "../Comps/MainLayout";
+
+const MOODS = [
+  { id: 1, emoji: "😊", label: "Happy", temprature: 0.9 },
+  { id: 2, emoji: "🙏", label: "Grateful", temprature: 0.85 },
+  { id: 3, emoji: "😌", label: "Peaceful", temprature: 0.8 },
+  { id: 4, emoji: "😢", label: "Sad", temprature: 0.1 },
+  { id: 5, emoji: "😟", label: "Anxious", temprature: 0.2 },
+  { id: 6, emoji: "😤", label: "Frustrated", temprature: 0.15 },
+  { id: 7, emoji: "😐", label: "Neutral", temprature: 0.5 },
+  { id: 8, emoji: "💤", label: "Bored", temprature: 0.4 },
+  { id: 9, emoji: "😴", label: "Tired", temprature: 0.3 },
+  { id: 10, emoji: "🌈", label: "Hopeful", temprature: 0.75 },
+  { id: 11, emoji: "✨", label: "Inspired", temprature: 0.88 },
+  { id: 12, emoji: "🤔", label: "Confused", temprature: 0.45 },
+  { id: 13, emoji: "⚡", label: "Energetic", temprature: 0.82 },
+  { id: 14, emoji: "😪", label: "Exhausted", temprature: 0.25 },
+  { id: 15, emoji: "🛀", label: "Relaxed", temprature: 0.7 },
+  { id: 16, emoji: "🎉", label: "Festive", temprature: 0.95 },
+  { id: 17, emoji: "💕", label: "Romantic", temprature: 0.85 },
+  { id: 18, emoji: "🌊", label: "Calm", temprature: 0.78 }
+];
+
+
+const { width } = Dimensions.get("window");
 
 export default function Mood() {
-  // Get screen dimensions for responsive layout
-  const {width, height} = Dimensions.get('window')
+  const [selectedMoods, setSelectedMoods] = useState([]);
+  const [notes, setNotes] = useState("");
 
-  // State to track whether the keyboard is visible
-  const [keyboardVisible, setkeyboardVisible] = useState(false);
-
-  // Array of mood options with emojis
-  const moodArr = [
-    "Happy 😊", 
-    "Grateful 🙏", 
-    "Peaceful 😌", 
-    "Sad 😢", 
-    "Anxious 😟", 
-    "Frustrated 😤", 
-    "Neutral 😐", 
-    "Bored 💤", 
-    "Tired 😴", 
-    "Hopeful 🌈", 
-    "Inspired ✨", 
-    "Confused 🤔", 
-    "Energetic ⚡", 
-    "Exhausted 😪", 
-    "Relaxed 🛀", 
-    "Festive 🎉", 
-    "Romantic 💕", 
-    "Calm 🌊"
-  ];
-
-  // States to track the selected mood input index and the emotion text
-  const [inputIndex, setInputIndex] = useState(null);
-  const [emotionValue, setEmotionValue] = useState("");
-
-  // Function to toggle the input field for a selected mood
-  const callInput = (index) => {
-    setInputIndex(inputIndex === index ? null : index);  // Toggle input visibility
-    setEmotionValue("");  // Clear the input field when a new mood is selected
-  };
-
-  // Function to handle text input changes
-  const handleInput = (text) => {
-    setEmotionValue(text);  // Update the emotion value as the user types
-  };
-
-  // UseEffect to handle keyboard visibility changes
-  useEffect(() => {
-    // Listeners for keyboard show/hide events
-    const keyboardDidAppear = Keyboard.addListener('keyboardDidShow', () => { setkeyboardVisible(true) });
-    const keyboardDidDisAppear = Keyboard.addListener('keyboardDidHide', () => { setkeyboardVisible(false) });
-
-    // Clean up listeners when the component is unmounted
-    return () => {
-      keyboardDidAppear.remove();
-      keyboardDidDisAppear.remove();
-    };
+  const toggleMood = useCallback((mood) => {
+    setSelectedMoods(prev => {
+      const isSelected = prev.some(m => m.id === mood.id);
+      if (isSelected) {
+        return prev.filter(m => m.id !== mood.id);
+      } else {
+        return [...prev, mood];
+      }
+    });
   }, []);
 
-  return (
-    <SafeAreaProvider>
-    <ImageBackground
-      source={require('../src/background.png')}
-      blurRadius={20}
-      style={{ width: width, height: height }} // Set background image size to cover the screen
-    > 
-      {/* SafeAreaView to ensure content is within safe bounds */}
-      <SafeAreaView style={{ paddingBottom: keyboardVisible ? 100 : 0 }}>
-        {/* FlatList to render the list of moods */}
-        <FlatList 
-          data={moodArr} // Passing the mood array
-          keyExtractor={(item, index) => index.toString()} // Generate a unique key for each item
-          renderItem={({ item, index }) => (
-            <View>
-              {/* TouchableOpacity for selecting a mood */}
-              <TouchableOpacity style={styles.listItems} onPress={() => callInput(index)}>
-                <View style={styles.background}>
-                  <Text style={styles.moodText}>{item}</Text>
-                </View>
-              </TouchableOpacity>
+  const handleSave = useCallback(async () => {
+    if (selectedMoods.length === 0) {
+      Alert.alert("No Mood Selected", "Please select at least one mood.");
+      return;
+    }
 
-              {/* Conditionally render the TextInput when the mood is selected */}
-              {inputIndex === index && (
-                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 1 }}>
-                  <TextInput
-                    style={[styles.input, { width: width * 0.95 }]} // Adjust input width based on screen size
-                    value={emotionValue} // Bind value to the emotion state
-                    onChangeText={handleInput} // Update emotion value when text changes
-                    placeholder="Why do you feel this way?" // Placeholder for TextInput
-                    multiline={true} // Allow multi-line input
-                    numberOfLines={5} // Set the number of lines for TextInput
-                  />
-                  {/* Button to save the entered emotion */}
+    try {
+      const moodEntry = {
+        timestamp: new Date().toISOString(),
+        moods: selectedMoods.map(mood => ({
+          id: mood.id,
+          emoji: mood.emoji,
+          label: mood.label,
+          temprature: mood.temprature
+        })),
+        notes: notes.trim() || null,
+        version: "1.0" // for future data migration if needed
+      };
+      
+      setData(JSON.stringify(moodEntry));
+      
+      setSelectedMoods([]);
+      setNotes("");
+      
+      Alert.alert("Saved! ✨", "Your mood has been recorded.");
+    } catch (error) {
+      console.error("Error saving mood:", error);
+      Alert.alert("Error", "Failed to save your mood. Please try again.");
+    }
+  }, [selectedMoods, notes]);
+
+  const renderMoodGrid = () => {
+    const rows = [];
+    for (let i = 0; i < MOODS.length; i += 3) {
+      const rowMoods = MOODS.slice(i, i + 3);
+      rows.push(
+        <View key={i} style={styles.moodRow}>
+          {rowMoods.map(mood => {
+            const isSelected = selectedMoods.some(m => m.id === mood.id);
+            return (
+              <TouchableOpacity
+                key={mood.id}
+                style={[
+                  styles.moodItem,
+                  isSelected && styles.moodItemSelected
+                ]}
+                onPress={() => toggleMood(mood)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.moodEmoji}>{mood.emoji}</Text>
+                <Text style={[
+                  styles.moodLabel,
+                  isSelected && styles.moodLabelSelected
+                ]}>
+                  {mood.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      );
+    }
+    return rows;
+  };
+
+  return (
+    <MainLayout>
+        <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              style={{ flex: 1 }}
+            >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <ImageBackground
+              source={require("../src/background.png")}
+              blurRadius={20}
+              style={styles.backgroundImage}
+            >
+              <ScrollView 
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
+              >
+                <View style={styles.content}>
+                  <Text style={styles.title}>How are you feeling?</Text>
+                  <Text style={styles.subtitle}>Select all that apply</Text>
+                  
+                  <View style={styles.moodGrid}>
+                    {renderMoodGrid()}
+                  </View>
+
+                  {selectedMoods.length > 0 && (
+                    <View style={styles.selectedSection}>
+                      <Text style={styles.selectedTitle}>Selected:</Text>
+                      <View style={styles.selectedMoods}>
+                        {selectedMoods.map(mood => (
+                          <View key={mood.id} style={styles.selectedMoodChip}>
+                            <Text style={styles.selectedMoodText}>
+                              {mood.emoji} {mood.label}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  )}
+
+                  <View style={styles.notesSection}>
+                    <Text style={styles.notesLabel}>
+                      Tell us more (optional):
+                    </Text>
+                    <TextInput
+                      style={styles.notesInput}
+                      value={notes}
+                      onChangeText={setNotes}
+                      placeholder="What's on your mind?"
+                      placeholderTextColor="rgba(0, 0, 0, 0.4)"
+                      multiline
+                      numberOfLines={4}
+                      textAlignVertical="top"
+                    />
+                  </View>
+
                   <TouchableOpacity
-                    onPress={() => { 
-                      setData(`${item} : ${emotionValue}`); // Store the mood and its emotion value
-                      callInput(index); // Close the input field after saving
-                    }}
-                    style={{
-                      flex: 1, alignItems: 'center', justifyContent: 'center', 
-                      backgroundColor: "rgb(224, 184, 255)", 
-                      width: width * 0.6, borderRadius: 50, padding: 4
-                    }}
+                    style={[
+                      styles.saveButton,
+                      selectedMoods.length === 0 && styles.saveButtonDisabled
+                    ]}
+                    onPress={handleSave}
+                    disabled={selectedMoods.length === 0}
+                    activeOpacity={0.8}
                   >
-                    <Text style={{ fontSize: 24, fontWeight: '600', color: "rgb(48, 25, 66)" }}>Keep It!</Text>
+                    <Text style={[
+                      styles.saveButtonText,
+                      selectedMoods.length === 0 && styles.saveButtonTextDisabled
+                    ]}>
+                      Save My Mood ✨
+                    </Text>
                   </TouchableOpacity>
                 </View>
-              )}
-            </View>
-          )}
-        />
-      </SafeAreaView>
-    </ImageBackground>
-    </SafeAreaProvider>
+              </ScrollView>
+            </ImageBackground>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
+    </MainLayout>
   );
 }
 
-// Styles for the component layout
 const styles = StyleSheet.create({
-  moodText: {
-    fontSize: 18,
-    margin: 10,
-    color: 'black', // Text color remains unaffected
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "gray",
-    borderRadius: 8,
-    padding: 8,
-    marginVertical: 5,
-    padding: 8,
-    marginHorizontal: 10,
-    fontSize: 20,
-    textAlignVertical: 'top',
-  },
-  listItems: {
-    flexDirection: 'row', // Aligns the items horizontally
-    justifyContent: 'center',
-    padding: 4,
-    margin: 4,
-  },
-  background: {
+  backgroundImage: {
     flex: 1,
-    justifyContent: 'center',
-    maxHeight: 200,
-    minHeight: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)', // White background with 30% opacity
-    borderColor: 'rgba(255, 255, 255, 0.44)', 
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  content: {
+    flex: 1,
+    padding: 20,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#2c1810',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#5d4e37',
+    textAlign: 'center',
+    marginBottom: 30,
+  },
+  moodGrid: {
+    marginBottom: 20,
+  },
+  moodRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  moodItem: {
+    flex: 1,
+    marginHorizontal: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
     borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  moodItemSelected: {
+    backgroundColor: 'rgba(224, 184, 255, 0.9)',
+    borderColor: 'rgb(147, 51, 234)',
+  },
+  moodEmoji: {
+    fontSize: 24,
+    marginBottom: 6,
+  },
+  moodLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#333',
+    textAlign: 'center',
+  },
+  moodLabelSelected: {
+    color: 'rgb(48, 25, 66)',
+    fontWeight: '600',
+  },
+  selectedSection: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+  },
+  selectedTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 10,
+  },
+  selectedMoods: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  selectedMoodChip: {
+    backgroundColor: 'rgba(147, 51, 234, 0.1)',
     borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 8,
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(147, 51, 234, 0.3)',
+  },
+  selectedMoodText: {
+    fontSize: 14,
+    color: 'rgb(48, 25, 66)',
+    fontWeight: '500',
+  },
+  notesSection: {
+    marginBottom: 30,
+  },
+  notesLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 10,
+  },
+  notesInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    color: '#333',
+    minHeight: 100,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  saveButton: {
+    backgroundColor: 'rgb(147, 51, 234)',
+    borderRadius: 25,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  saveButtonDisabled: {
+    backgroundColor: 'rgba(147, 51, 234, 0.3)',
+  },
+  saveButtonText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: 'white',
+  },
+  saveButtonTextDisabled: {
+    color: 'rgba(255, 255, 255, 0.5)',
   },
 });

@@ -10,138 +10,140 @@ import {
   View,
   Animated,
 } from "react-native";
-import getAllData from "../asyncStorageMethods/getAllData"; // Import method to get all data from AsyncStorage
-import clearData from "../asyncStorageMethods/clearData"; // Import method to clear all data from AsyncStorage
-import deleteData from "../asyncStorageMethods/deleteData"; // Import method to delete specific data from AsyncStorage
+import getAllData from "../asyncStorageMethods/getAllData";
+import clearData from "../asyncStorageMethods/clearData";
+import deleteData from "../asyncStorageMethods/deleteData";
+import MainLayout from "../Comps/MainLayout";
 
-// Main component for displaying the history of saved moods
 export default function History() {
-  const [allData, setAllData] = useState([]); // State to store all data retrieved from AsyncStorage
-  const allDisappearAnimation = useRef(new Animated.Value(1)).current; // Animation reference for clearing all data
-
-  // Fetch all data from AsyncStorage on component mount
+  const [allData, setAllData] = useState([]);
+  const allDisappearAnimation = useRef(new Animated.Value(1)).current;
+  console.log('kdzja')
   useEffect(() => {
     const fetchData = async () => {
-      const data = await getAllData(); // Fetch all data
-      setAllData(data || []); // Set the fetched data or empty array if no data found
+      const stringifiedData = await getAllData();
+      console.log(stringifiedData)
+      const data = stringifiedData.map((item) => ({
+        key: item.key,
+        ...JSON.parse(item.value)
+      }));
+      setAllData(data || []);
     };
-
-    fetchData(); // Call fetchData function
+    fetchData();
   }, []);
 
-  // Function to delete all data with animation
   const deleteAll = async () => {
-    // Start the animation to fade out all items
     Animated.timing(allDisappearAnimation, {
-      toValue: 0, // Fade to invisible
+      toValue: 0,
       duration: 300,
-      useNativeDriver: true, // Optimize with native driver for smooth animation
+      useNativeDriver: true,
     }).start(async () => {
-      await clearData(); // Clear all data after animation finishes
-      setAllData([]); // Reset the state to an empty array
+      await clearData();
+      setAllData([]);
     });
   };
 
-  // Function to delete a specific item from data with animation
   const deleteItem = async (key, index, animatedValue) => {
-    // Start the animation to fade out the specific item
     Animated.timing(animatedValue, {
-      toValue: 0, // Fade to invisible
+      toValue: 0,
       duration: 300,
       useNativeDriver: true,
     }).start(() => {
-      deleteData(key); // Delete the item from AsyncStorage
-      const newData = allData.filter((_, i) => i !== index); // Remove item from the data state
-      setAllData(newData); // Update state with the new data
+      deleteData(key);
+      const newData = allData.filter((_, i) => i !== index);
+      setAllData(newData);
     });
   };
 
-  // Helper function to format date and time from the data key
-  const dateTimeFormat = (key) => {
-    const [date, timeWithMs] = key.split("T"); // Split the key into date and time
-    const time = timeWithMs.split(".")[0]; // Remove milliseconds from time
-    const formattedDate = date.split("-").join(" "); // Format date for display
-    return [formattedDate, time]; // Return formatted date and time
-  };
+  const dateTimeFormat = (timestamp) => {
+  const [date, timeWithMs] = timestamp.split("T");
+  const time = timeWithMs?.split(".")[0] ?? "";
+  const formattedDate = date?.split("-").join(" ") ?? "";
+  return [formattedDate, time];
+};
+
 
   return (
-    <ImageBackground
-      source={require("../src/background.png")}
-      style={styles.container}
-    >
-      {/* Animated view for all data */}
-      <Animated.View
-        style={{
-          flex: 1,
-          opacity: allDisappearAnimation,
-          transform: [{ scale: allDisappearAnimation }],
-        }}
+    <MainLayout>  
+      <ImageBackground
+        source={require("../src/background.png")}
+        style={styles.container}
       >
-        {/* FlatList to display all saved mood data */}
-        <FlatList
-          data={allData} // Display the data stored in allData state
-          keyExtractor={(item) => item.key} // Use key as unique identifier for each item
-          renderItem={({ item, index }) => {
-            const animatedValue = new Animated.Value(1); // Animation value for each item
-
-            return (
-              <Animated.View
-                style={{
-                  opacity: animatedValue, // Set opacity based on animation value
-                  transform: [{ scale: animatedValue }], // Apply scale animation
-                }}
-              >
-                <TouchableOpacity style={styles.moods}>
-                  <Text style={styles.item}>{item.value}</Text> {/* Display the saved mood */}
-                  <View
-                    style={{
-                      flex: 1,
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    {/* Display the formatted date and time */}
-                    <View>
-                      <Text style={{ color: "rgb(116, 116, 116)" }}>
-                        {dateTimeFormat(item.key)[1]}
-                      </Text>
-                      <Text style={{ color: "rgb(116, 116, 116)" }}>
-                        {dateTimeFormat(item.key)[0]}
-                      </Text>
+        <Animated.View
+          style={{
+            flex: 1,
+            opacity: allDisappearAnimation,
+            transform: [{ scale: allDisappearAnimation }],
+          }}
+        >
+          <FlatList
+            data={allData}
+            keyExtractor={(item) => item.key}
+            renderItem={({ item, index }) => {
+              const animatedValue = new Animated.Value(1);
+              return (
+                <Animated.View
+                  style={{
+                    opacity: animatedValue,
+                    transform: [{ scale: animatedValue }],
+                  }}
+                >
+                  <TouchableOpacity style={styles.moods}>
+                    <View style={{ marginBottom: 8 }}>
+                      {item.moods.map((mood, i) => (
+                        <View key={i} style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
+                          <Text style={{ fontSize: 22, marginRight: 6 }}>{mood.emoji}</Text>
+                          <Text style={{ fontSize: 18, color: "#333", fontWeight: "600" }}>{mood.label}</Text>
+                          {typeof mood.temprature === "number" && (
+                            <Text style={{ marginLeft: 8, color: "#666" }}>
+                              ({Math.round(mood.temprature * 100)}% happy)
+                            </Text>
+                          )}
+                        </View>
+                      ))}
                     </View>
 
-                    {/* Delete button for each item */}
-                    <TouchableOpacity
-                      style={{ paddingLeft: 12 }}
-                      onPress={() => deleteItem(item.key, index, animatedValue)} // Call deleteItem on press
-                    >
-                      <Image
-                        source={require("../src/delete.png")}
-                        style={{ width: 28, height: 28 }}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                </TouchableOpacity>
-              </Animated.View>
-            );
-          }}
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>Clear Mind I see!</Text> // Message when no data is available
-          }
-        />
-      </Animated.View>
+                    {item.notes && (
+                      <Text style={{ fontStyle: "italic", color: "#555", marginBottom: 6 }}>
+                        Note: {item.notes}
+                      </Text>
+                    )}
+                      <Text style={{ fontStyle: "italic", color: "#555", marginBottom: 6 }}>
+                        Happiness rate: { 
+                            (item.moods.reduce((sum, mood) => sum + (mood.temprature || 0), 0) / item.moods.length * 100).toFixed(2)
+                        }%
+                      </Text>
 
-      {/* Button to clear all data */}
-      <SafeAreaView style={styles.btnContainer}>
-        <TouchableOpacity style={styles.btnStyle} onPress={deleteAll}>
-          <Text style={styles.btnText}>Clear All</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
-    </ImageBackground>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                      <View>
+                        <Text style={{ color: "rgb(116, 116, 116)" }}>{dateTimeFormat(item.timestamp)[1]}</Text>
+                        <Text style={{ color: "rgb(116, 116, 116)" }}>{dateTimeFormat(item.timestamp)[0]}</Text>
+                      </View>
+
+                      <TouchableOpacity style={{ paddingLeft: 12 }} onPress={() => deleteItem(item.timestamp, index, animatedValue)}>
+                        <Image source={require("../src/delete.png")} style={{ width: 28, height: 28 }} />
+                      </TouchableOpacity>
+                    </View>
+                  </TouchableOpacity>
+
+                </Animated.View>
+              );
+            }}
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>Clear Mind I see!</Text>
+            }
+          />
+        </Animated.View>
+        <SafeAreaView style={styles.btnContainer}>
+          <TouchableOpacity style={styles.btnStyle} onPress={deleteAll}>
+            <Text style={styles.btnText}>Clear All</Text>
+          </TouchableOpacity>
+        </SafeAreaView>
+      </ImageBackground>
+    </MainLayout>
   );
 }
 
-// Styles for the components
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -158,7 +160,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     fontSize: 24,
     color: "rgba(32, 5, 54, 0.67)",
-    fontWeight: '900', // Styles for empty list message
+    fontWeight: '900',
   },
   btnContainer: {
     flexDirection: "row",
@@ -179,7 +181,7 @@ const styles = StyleSheet.create({
     color: "rgb(39, 26, 51)",
   },
   moods: {
-    backgroundColor: "rgba(255,255,255,0.8)", // Background color for each mood item
+    backgroundColor: "rgba(255,255,255,0.8)",
     borderRadius: 12,
     marginVertical: 5,
     padding: 8,
