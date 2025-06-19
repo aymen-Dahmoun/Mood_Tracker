@@ -17,27 +17,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import setData from './../asyncStorageMethods/setData';
 import MainLayout from "../Comps/MainLayout";
-
-const MOODS = [
-  { id: 1, emoji: "😊", label: "Happy", temprature: 0.9 },
-  { id: 2, emoji: "🙏", label: "Grateful", temprature: 0.85 },
-  { id: 3, emoji: "😌", label: "Peaceful", temprature: 0.8 },
-  { id: 4, emoji: "😢", label: "Sad", temprature: 0.1 },
-  { id: 5, emoji: "😟", label: "Anxious", temprature: 0.2 },
-  { id: 6, emoji: "😤", label: "Frustrated", temprature: 0.15 },
-  { id: 7, emoji: "😐", label: "Neutral", temprature: 0.5 },
-  { id: 8, emoji: "💤", label: "Bored", temprature: 0.4 },
-  { id: 9, emoji: "😴", label: "Tired", temprature: 0.3 },
-  { id: 10, emoji: "🌈", label: "Hopeful", temprature: 0.75 },
-  { id: 11, emoji: "✨", label: "Inspired", temprature: 0.88 },
-  { id: 12, emoji: "🤔", label: "Confused", temprature: 0.45 },
-  { id: 13, emoji: "⚡", label: "Energetic", temprature: 0.82 },
-  { id: 14, emoji: "😪", label: "Exhausted", temprature: 0.25 },
-  { id: 15, emoji: "🛀", label: "Relaxed", temprature: 0.7 },
-  { id: 16, emoji: "🎉", label: "Festive", temprature: 0.95 },
-  { id: 17, emoji: "💕", label: "Romantic", temprature: 0.85 },
-  { id: 18, emoji: "🌊", label: "Calm", temprature: 0.78 }
-];
+import { MOODS } from "../constants/moodList";
+import Divider from "../Comps/Divider";
 
 
 const { width } = Dimensions.get("window");
@@ -70,7 +51,8 @@ export default function Mood() {
           id: mood.id,
           emoji: mood.emoji,
           label: mood.label,
-          temprature: mood.temprature
+          temprature: mood.temprature,
+          color: mood.color
         })),
         notes: notes.trim() || null,
         version: "1.0" // for future data migration if needed
@@ -101,6 +83,7 @@ export default function Mood() {
                 key={mood.id}
                 style={[
                   styles.moodItem,
+                  {backgroundColor: `${mood.color}CC`},
                   isSelected && styles.moodItemSelected
                 ]}
                 onPress={() => toggleMood(mood)}
@@ -194,6 +177,7 @@ export default function Mood() {
                       Save My Mood ✨
                     </Text>
                   </TouchableOpacity>
+                  <Divider style={{height:0}} />
                 </View>
               </ScrollView>
             </ImageBackground>
@@ -329,10 +313,9 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 8,
   },
   saveButtonDisabled: {
-    backgroundColor: 'rgba(147, 51, 234, 0.3)',
+    backgroundColor: 'rgba(146, 51, 234, 0.5)',
   },
   saveButtonText: {
     fontSize: 18,

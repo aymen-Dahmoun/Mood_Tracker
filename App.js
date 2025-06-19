@@ -7,20 +7,23 @@ import History from "./screens/History";
 import Analysis from "./screens/Analysis";
 import NavBar from "./Comps/NavBar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import ConversationProvider from "./context/ConversationContext";
   
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="Home" screenOptions={{headerShown: false}} >
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="Mood" component={Mood} />
-        <Stack.Screen name="History" component={History} />
-        <Stack.Screen name="Analysis" component={Analysis} />
-      </Stack.Navigator>
-    </NavigationContainer>
-    </SafeAreaProvider>
+    <ConversationProvider>
+      <SafeAreaProvider>
+        <NavigationContainer>
+          <Stack.Navigator initialRouteName="Home" screenOptions={{headerShown: false}} >
+            <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="Mood" component={Mood} />
+            <Stack.Screen name="History" component={History} />
+            <Stack.Screen name="Analysis" component={Analysis} />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </SafeAreaProvider>
+    </ConversationProvider>
   );
 }

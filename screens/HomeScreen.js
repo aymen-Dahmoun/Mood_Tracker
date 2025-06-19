@@ -6,6 +6,7 @@ import NavBar from "../Comps/NavBar";
 import MainLayout from "../Comps/MainLayout";
 import PromptInput from "../Comps/PromptInput";
 import Messages from '../Comps/Messages'
+import Divider from "../Comps/Divider";
 
 
 export default function HomeScreen({ navigation }) {
@@ -54,7 +55,6 @@ export default function HomeScreen({ navigation }) {
           >
             <Messages />
           </ImageBackground>
-
         </Animated.View>
     </MainLayout>
   );
