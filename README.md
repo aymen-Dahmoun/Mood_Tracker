@@ -40,7 +40,7 @@
 
 ---
 
-### 🔍 Anamysis Screen 
+### 🔍 Analysis Screen 
 - Display four types of graphs to summerize the mood changements through time
 - Plots are updated after each mood is added
 <img src="https://github.com/user-attachments/assets/1ef49755-b0b1-4b58-b7af-61e1194dd947" width="200"/>
